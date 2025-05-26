@@ -1,13 +1,12 @@
 from sqlalchemy import ForeignKey, Column, Integer, String, MetaData
-from sqlalchemy.orm import relationship, backref
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship, backref, declarative_base
 
 convention = {
     "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
 }
 metadata = MetaData(naming_convention=convention)
 
-Base = declarative_base(metadata=metadata)
+Base = declarative_base()
 
 class Company(Base):
     __tablename__ = 'companies'
@@ -18,6 +17,10 @@ class Company(Base):
 
     def __repr__(self):
         return f'<Company {self.name}>'
+    
+    @property
+    def devs(self):
+        return list({freebie.dev for freebie in self.freebies})
 
 class Dev(Base):
     __tablename__ = 'devs'
@@ -27,3 +30,26 @@ class Dev(Base):
 
     def __repr__(self):
         return f'<Dev {self.name}>'
+    
+    @property
+    def companies(self):
+        return list({freebie.company for freebie in self.freebies})
+    
+class Freebie(Base):
+    __tablename__ = "freebies"
+
+    id = Column(Integer(), primary_key = True)
+    item_name = Column(String())
+    value = Column(Integer())
+
+    dev_id = Column(Integer, ForeignKey('devs.id'))
+    company_id = Column(Integer, ForeignKey('companies.id'))
+
+    dev = relationship("Dev", backref="freebies")
+    company = relationship("Company", backref = "freebies")
+
+    def __repr__(self):
+        return f"<Freebie {self.item_name} - ${self.value}>"
+    
+    def print_details(self):
+        return f"{self.dev.name} has a {self.item_name} from {self.company.name}"
